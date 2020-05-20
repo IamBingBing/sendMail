@@ -1,4 +1,5 @@
 <?php
+namespace bingbing;
 use pocketmine\plugin\PluginBase;
 use pocketmine\event\Listener;
 use pocketmine\utils\Config;
