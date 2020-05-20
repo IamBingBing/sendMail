@@ -30,8 +30,8 @@ class mailing extends PluginBase implements Listener{
         if ($pk instanceof ModalFormResponsePacket) {
             $pk->formId = 20200520;
             $data = json_decode($pk->formData , true);
-            $this->d[$event->getPlayer()->getName()] = $data;
-            $event->getPlayer()->sendMessage($data. "로 등록완료");
+            $this->d[$event->getPlayer()->getName()] = $data[0];
+            $event->getPlayer()->sendMessage($data[0]. "로 등록완료");
             $this->db->setAll( $this->d ) ;
             $this->db->save();
         }
@@ -40,22 +40,31 @@ class mailing extends PluginBase implements Listener{
         $a = [ "type" => "custom_form",
             "title" => "빙빙 안내 메일 동의",
             "content" => [
-                "type"=> "label",
-                "text" => "아래에 메일을 입력하시면 메일을 수신하는 것에 대하여 동의하십니다 . 개인정보는 쉽게 이용당할 수 있으니 믿을만한 서버에서만 작성 해주세요. \n 메일 작성법 : ****@naver.com 까지 다 입력해주세요 ",
-                "type"=> "input"
-                
+                ["type"=> "label",
+                "text" => "아래에 메일을 입력하시면 메일을 수신하는 것에 대하여 동의하십니다 . 개인정보는 쉽게 이용당할 수 있으니 믿을만한 서버에서만 작성 해주세요. \n 메일 작성법 : ****@naver.com 까지 다 입력해주세요 "]
+                ,
+                ["type"=> "input",
+                "text"=>"메일주소"
+                    
+        ]
                 
             ]];
         return json_encode($a) ;
     }
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool { 
-        if ($command == "메일보내기" && $sender->isOp()) {
+        if ($command == "메일보내기" && $sender->isOp() && !empty ($args)) {
             $c = 0;
             foreach ($this->d as $b => $a)  {
-                mail($a  , $args[0], $args);
+                foreach ($args as $d => $f){
+                    if($d != 0) {
+                    $e = " ".$f; 
+                    }
+                }
+                mail($a  , $args[0], $e);
                 $c++ ;
             }
             $sender->sendMessage($c."건 전송 완료");
+            return true;
         }
     }
 }
