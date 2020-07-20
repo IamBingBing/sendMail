@@ -12,9 +12,13 @@ use pocketmine\network\mcpe\protocol\ModalFormRequestPacket;
 
 class mailing extends PluginBase implements Listener{
     public function onEnable(){
+        @mkdir($this->getDataFolder());
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
+        $this->option =  new Config($this->getDataFolder()."option.yml" , Config::YAML , ["id" => "" , "passward" => "" , "name" => "빙빙"]);
+        $this->op = $this->option->getAll();
         $this->db = new Config($this->getDataFolder()."data.yml" , Config::YAML , []);
         $this->d = $this->db->getAll();
+        
     }
     public function onJoin(PlayerJoinEvent $event){
         if (empty ( $this->d [ $event->getPlayer()->getName()] )) {
@@ -30,8 +34,8 @@ class mailing extends PluginBase implements Listener{
         if ($pk instanceof ModalFormResponsePacket) {
             $pk->formId = 20200520;
             $data = json_decode($pk->formData , true);
-            $this->d[$event->getPlayer()->getName()] = $data[0];
-            $event->getPlayer()->sendMessage($data[0]. "로 등록완료");
+            $this->d[$event->getPlayer()->getName()] = (string)$data[1];
+            $event->getPlayer()->sendMessage((string)$data[1]. "로 등록완료");
             $this->db->setAll( $this->d ) ;
             $this->db->save();
         }
@@ -51,6 +55,38 @@ class mailing extends PluginBase implements Listener{
             ]];
         return json_encode($a) ;
     }
+    public function mail ($fname, $fmail, $to, $subject, $content, $type=0, $file="", $cc="", $bcc=""){
+        if ($type != 1) $content = nl2br($content);
+        
+        $mail = new PHPMailer(); 
+        $mail->IsSMTP();
+        $mail->SMTPSecure = "ssl";
+        $mail->SMTPAuth = true;
+        $mail->Host = "smtp.naver.com";
+        $mail->Port = 465;
+        $mail->Username = $this->op["id"];
+        $mail->Password = $this->op["passward"];
+        $mail->CharSet = 'UTF-8';
+        $mail->From = $fmail;
+        $mail->FromName = $fname;
+        $mail->Subject = $subject;
+        $mail->AltBody = ""; 
+        $mail->msgHTML($content);
+        $mail->addAddress($to);
+        $mail->send();
+        if ($cc)
+            $mail->addCC($cc);
+            if ($bcc)
+                $mail->addBCC($bcc);
+                if ($file != "") {
+                    foreach ($file as $f) {
+                        $mail->addAttachment($f['path'], $f['name']);
+                    }
+                }
+        if ( $mail->send() ) echo "성공";
+        else echo "실패";
+                
+    }
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool { 
         if ($command == "메일보내기" && $sender->isOp() && !empty ($args)) {
             $c = 0;
@@ -60,7 +96,8 @@ class mailing extends PluginBase implements Listener{
                     $e = " ".$f; 
                     }
                 }
-                mail($a  , $args[0], $e);
+                $this->mail( $this->op["name"], $this->op["id"]."@naver.com" , $a , $args[0], $e  );
+                $sender->sendMessage($a , $e);
                 $c++ ;
             }
             $sender->sendMessage($c."건 전송 완료");
